@@ -1,13 +1,14 @@
+from micropython import const
+from machine import Pin
 import bluetooth
 import random
 import struct
 import time
 
-# --- CONSTANTS ---
-_SERVICE_UUID = bluetooth.UUID(0x181A)  # Environmental Sensing Service
-_CHAR_UUID = bluetooth.UUID(0x2A6C)      # Temperature Characteristic
+# UUIDs
+_SERVICE_UUID = bluetooth.UUID(0x181A)	# Environmental Sensing Service
+_CHAR_UUID = bluetooth.UUID(0x2A9D)		# Weight Measurement Characteristic 
 
-# --- BLE CONFIGURATION ---
 ble = bluetooth.BLE()
 
 # Ensure a clean start
@@ -21,7 +22,7 @@ is_connected = False
 
 def create_advertising_packet():
     """Creates a valid BLE advertising payload."""
-    name = b"Pico2W-Sensor"
+    name = b"Pulley "
     
     # 1. Flags: Length 2, Type 0x01 (Flags), Value 0x06 (General Discoverable)
     flags = struct.pack("BBB", 2, 0x01, 0x06)
@@ -81,11 +82,14 @@ ble.irq(irqs)
 advertise()
 print("Bluetooth Advertising started. Check System Bluetooth Settings now.")
 
+led = Pin("LED", Pin.OUT)
+
 # --- MAIN LOOP ---
 while True:
     # Blink LED so we know code is running
     # (On Pico 2W, onboard LED is usually pin 25, or use LED class if available)
-    led = machine.Pin("LED", machine.Pin.OUT)
+    
+    led.value(1)
     
     if is_connected: 
         mock_temp = random.uniform(20.0, 30.0)
@@ -96,5 +100,9 @@ while True:
         ble.gatts_notify(0, char_handle, payload)
         
         print(f"Sent: Temp {mock_temp:.2f}°C, Humidity {mock_humid}%")
+        time.sleep(0.5)
+        led.value(0)
     
-    time.sleep(1)
+    
+    time.sleep(0.5)
+    
